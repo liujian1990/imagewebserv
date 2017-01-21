@@ -1,8 +1,11 @@
+# -*- coding: utf-8 -*-
+
 import os
 
 from flask import Flask, request, render_template, Response
 from werkzeug import secure_filename
 from videocamera import VideoCamera
+from videocontrol import VideoCtrl
 UPLOAD_FOLDER = './'
 # create our little application :)
 app = Flask(__name__)
@@ -16,8 +19,6 @@ app.config.update(dict(
     PASSWORD='admin'
 ))
 app.config.from_envvar('FLASKR_SETTINGS', silent=True)
-#运行前先打开摄像头
-camera_intance = VideoCamera()
 
 @app.route('/')
 def index():
@@ -36,11 +37,16 @@ def upload_file():
 
 @app.route('/play')
 def play():
-
-    return Response(gen(),
+    ctrl = VideoCtrl()
+    ans = Response(gen(ctrl),
              mimetype='multipart/x-mixed-replace; boundary=frame')
-def gen():
-    while True:
+    return ans
+
+def gen(ctrl):
+    # 运行前先打开摄像头
+    camera_intance = VideoCamera()
+    while ctrl.get_status():
         frame=camera_intance.get_frame()
         yield (b'--framern'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+    return
